@@ -1,1 +1,1 @@
-# Information-Theoretic-Predictive-Variable-Selection
+Information Theoretic Criteria for Predictive Variable Selection
