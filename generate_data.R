@@ -150,7 +150,7 @@ Get.Data <- function(sample_size,num_features,theta,bins,model){
   yf[idx_control] = y0[idx_control]
   data = as.data.frame.matrix(x)
   
-  synthetic_dataset <- numeric(0)
+  synthetic_dataset <- c()
   synthetic_dataset$data <- data
   synthetic_dataset$treatment <- treatment
   synthetic_dataset$labels <- yf
