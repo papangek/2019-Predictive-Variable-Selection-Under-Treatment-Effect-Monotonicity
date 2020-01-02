@@ -1,1 +1,1 @@
-Information Theoretic Criteria for Predictive Variable Selection
+Information Theoretic Criteria for Identifying Treatment Responders in Clinical Trial Data
