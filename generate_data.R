@@ -1,7 +1,9 @@
 ###########################################################
 ################ GENERATE DATA ############################
 ###########################################################
-Get.Data <- function(sample_size,num_features,theta,bins,model){
+library(MASS)
+
+Get.Data <- function(sample_size,num_features,bins,model){
   
   predictive = c()
   prognostic = c()
@@ -78,10 +80,10 @@ Get.Data <- function(sample_size,num_features,theta,bins,model){
     x = mvrnorm(sample_size, rep(0, num_features), sigma)
     for (index_feature in 1:num_features){ 
       if (index_feature==4 | index_feature==1){
-        x[,index_feature] = 1*x[,index_feature]>-0.545
+        x[,index_feature] = 1*x[,index_feature]>0
       }
       else if (index_feature==5| index_feature==2){
-        x[,index_feature] = 1*x[,index_feature]<0.545
+        x[,index_feature] = 1*x[,index_feature]>0
       }
       else if (index_feature==6| index_feature==3){
         x[,index_feature] = 1*x[,index_feature]>0
@@ -89,11 +91,12 @@ Get.Data <- function(sample_size,num_features,theta,bins,model){
       else{
         x[,index_feature] = 1*x[,index_feature]>0
       }
+      x[,index_feature] = 1*x[,index_feature]>0
     }
     
     p0_temp = 0.3 + 0.05*x[,1]*x[,2]*x[,3] + 0.05*x[,4]*x[,5]*x[,6]
     logit_y0 = log(p0_temp/(1-p0_temp))
-    p1_temp = 0.3 + 0.25*x[,1]*x[,2]*x[,3] + 0.1*x[,4]*x[,5]*x[,6]
+    p1_temp = 0.3 + 0.35*x[,1]*x[,2]*x[,3] + 0.25*x[,4]*x[,5]*x[,6] 
     logit_y1 = log(p1_temp/(1-p1_temp))
     treatment <- rbinom(sample_size,1,0.5)
     predictive = c(1,2,3,4,5,6)
@@ -139,6 +142,87 @@ Get.Data <- function(sample_size,num_features,theta,bins,model){
     }
   }
   
+  if(model=='M7') # To test biases of INFO+ wrt the treatment assignment
+  { 
+    correl = 0
+    sigma = matrix(rep(0, num_features*num_features), nrow = num_features, ncol = num_features)
+    sigma[seq(1,num_features,2),seq(1,num_features,2)] <-correl 
+    sigma[seq(2,num_features,2),seq(2,num_features,2)] <-correl 
+    diag(sigma) = 1
+    x = mvrnorm(sample_size, rep(0, num_features), sigma)
+    logit_y0 = x[,1] + x[,2] + x[,3] + x[,4] + x[,5] + x[,6]
+    logit_y1 = logit_y0 + 1*(x[,1]>0)
+    logit_pt = 0.5*x[,1]
+    pt = 1/(1+exp(-logit_pt))
+    treatment <- rbinom(sample_size,1,pt)
+    predictive = c(1)
+    prognostic = c(1,2,3,4,5,6)
+    
+    for (index_feature in 1:num_features){ 
+      x[,index_feature] = t(infotheo::discretize( x[,index_feature], disc="equalwidth", nbins= bins))
+    }
+  }
+  
+  if(model=='M8') # To test biases of INFO+ wrt the treatment assignment
+  { 
+    correl = 0
+    sigma = matrix(rep(0, num_features*num_features), nrow = num_features, ncol = num_features)
+    sigma[seq(1,num_features,2),seq(1,num_features,2)] <-correl 
+    sigma[seq(2,num_features,2),seq(2,num_features,2)] <-correl 
+    diag(sigma) = 1
+    x = mvrnorm(sample_size, rep(0, num_features), sigma)
+    logit_y0 = x[,1] + x[,2] + x[,3] + x[,4] + x[,5] + x[,6]
+    logit_y1 = logit_y0 + 1*(x[,1]>0)
+    logit_pt = 0.5*x[,2]
+    pt = 1/(1+exp(-logit_pt))
+    treatment <- rbinom(sample_size,1,pt)
+    predictive = c(1)
+    prognostic = c(1,2,3,4,5,6)
+    
+    for (index_feature in 1:num_features){ 
+      x[,index_feature] = t(infotheo::discretize( x[,index_feature], disc="equalwidth", nbins= bins))
+    }
+  }
+  
+  if(model=='M9') # To test whether it distinguishes between positive and negative effects
+  { 
+  correl = 0.7
+  sigma = matrix(rep(0, num_features*num_features), nrow = num_features, ncol = num_features)
+  sigma[seq(1,num_features,2),seq(1,num_features,2)] <-correl 
+  sigma[seq(2,num_features,2),seq(2,num_features,2)] <-correl 
+  diag(sigma) = 1
+  x = mvrnorm(sample_size, rep(0, num_features), sigma)
+  logit_y0 = x[,1] + x[,2] + x[,3] + x[,4] + x[,5] + x[,6] + x[,7] + x[,8]
+  logit_y1 = logit_y0 -5*(x[,1]>0)*(x[,2]>0) + 3*(x[,3]>0)*(x[,4]>0)
+  treatment <- rbinom(sample_size,1,0.5)
+  predictive = c(1,2,3,4)
+  prognostic = c(5,6,7,8)
+  
+  for (index_feature in 1:num_features){ 
+    x[,index_feature] = t(infotheo::discretize( x[,index_feature], disc="equalwidth", nbins= bins))
+  }
+  }
+  
+  if(model=='M10') # To test whether it distinguishes between positive and negative effects
+  { 
+    correl = 0.7
+    sigma = matrix(rep(0, num_features*num_features), nrow = num_features, ncol = num_features)
+    sigma[seq(1,num_features,2),seq(1,num_features,2)] <-correl 
+    sigma[seq(2,num_features,2),seq(2,num_features,2)] <-correl 
+    diag(sigma) = 1
+    x = mvrnorm(sample_size, rep(0, num_features), sigma)
+    alpha = mvrnorm(sample_size, 0, 0.25)
+    beta = mvrnorm(sample_size, 0, 0.25)
+    logit_y0 = x[,1] + x[,2] + x[,3] + x[,4] + x[,5] + x[,6] + x[,7] + x[,8]
+    logit_y1 = logit_y0 -1*(x[,1]>0)*(x[,2]>0) + 3*(x[,3]>0)*(x[,4]>0)
+    treatment <- rbinom(sample_size,1,0.5)
+    predictive = c(1,2,3,4)
+    prognostic = c(5,6,7,8)
+    
+    for (index_feature in 1:num_features){ 
+      x[,index_feature] = t(infotheo::discretize( x[,index_feature], disc="equalwidth", nbins= bins))
+    }
+  }
   
   pY0 = 1/(1+exp(-logit_y0))
   pY1 = 1/(1+exp(-logit_y1))  

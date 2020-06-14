@@ -1,15 +1,15 @@
-EPSILON = 0.001
+library(entropy)
+library(infotheo)
+EPSILON = 0.001 # small threshold to fitler out some irrelevant variables for computational efficiency
 CONST = -100000
 
-#################################################################################
-#### The implementation of INFO and INFO+ is based on https://github.com/sechidis
-#################################################################################
+# The code for INFO and INFO+ was taken from https://github.com/sechidis/2018-Bioinformatics-Predictive-Biomarker-Discovery
 
 ######################################
 ############## INFO  #################
 #####################################
 INFO <- function(data,labels,treatment){
-  
+
   num_features <- ncol(data)
   mi_scores <- 	rep(0, num_features)
   for (index_feature in 1:num_features){ 
@@ -92,25 +92,6 @@ APMI <- function(features,labels,treatment){
   
   N = length(labels)
   
-  ### p(T)
-  freq_T = table(treatment)
-  p_T = freqs.shrink(freq_T,verbose=FALSE)
-  
-  ### p(X)
-  freq_X = table(features)
-  p_X = freqs.shrink(freq_X,verbose=FALSE)
-  
-  ### p(Y,T)
-  YT = interaction(labels,treatment)
-  freq_YT = table(YT)
-  p_YT = freqs.shrink(freq_YT,verbose = FALSE)
-  
-  ### p(X,T)
-  XT = interaction(features,treatment)
-  freq_XT = table(XT)
-  p_XT = freqs.shrink(freq_XT,verbose = FALSE)
-  
-  ### p(Y,X,T)
   YXT = interaction(labels,features,treatment)
   freq_YXT = table(YXT)
   p_YXT = freqs.shrink(freq_YXT,verbose = FALSE)
@@ -119,16 +100,40 @@ APMI <- function(features,labels,treatment){
   unique_Y = unique(labels)
   unique_T = unique(treatment)
   
-  p_Y_given_X_Tis1 = matrix(, nrow = length(unique_Y), ncol = length(unique_X))
+  p_T = rep(0,length(unique_T))
+  names(p_T) = unique_T
+  p_X = rep(0,length(unique_X))
+  names(p_X) = unique_X
+  YT = interaction(labels,treatment)
+  p_YT = rep(0,length(levels(YT)))
+  names(p_YT) = levels(YT)
+  XT = interaction(features,treatment)
+  p_XT = rep(0,length(levels(XT)))
+  names(p_XT) = levels(XT)
+  for (val in names(p_YXT)){
+    temp = unlist(strsplit(val,"[.]"))
+    p_T[temp[length(temp)]] = p_T[temp[length(temp)]] + p_YXT[val]
+    val_temp = paste(temp[c(2:(length(temp)-1))],collapse=".")
+    p_X[val_temp] = p_X[val_temp] + p_YXT[val]
+    val_temp = paste(temp[c(1,length(temp))],collapse=".")
+    p_YT[val_temp] = p_YT[val_temp] + p_YXT[val]
+    val_temp = paste(temp[c(2:length(temp))],collapse=".")
+    p_XT[val_temp] = p_XT[val_temp] + p_YXT[val]
+  }
+  
+  ### Conditional Distribution p(Y|x,t=1), p(Y|x,t=0)
+  p_Y_given_X_Tis1 = matrix(data=NA, nrow = length(unique_Y), ncol = length(unique_X))
   rownames(p_Y_given_X_Tis1) = unique_Y
   colnames(p_Y_given_X_Tis1) = unique_X
-  p_Y_given_X_Tis0 = matrix(, nrow = length(unique_Y), ncol = length(unique_X))
+  p_Y_given_X_Tis0 = matrix(data=NA, nrow = length(unique_Y), ncol = length(unique_X))
   rownames(p_Y_given_X_Tis0) = unique_Y
   colnames(p_Y_given_X_Tis0) = unique_X
-  p_YX_Tis1 = matrix(, nrow = length(unique_Y), ncol = length(unique_X))
+  
+  ### Joint Distribution p(Y1,x), p(Y0,x)
+  p_YX_Tis1 = matrix(data=NA, nrow = length(unique_Y), ncol = length(unique_X))
   rownames(p_YX_Tis1) = unique_Y
   colnames(p_YX_Tis1) = unique_X
-  p_YX_Tis0 = matrix(, nrow = length(unique_Y), ncol = length(unique_X))
+  p_YX_Tis0 = matrix(data=NA, nrow = length(unique_Y), ncol = length(unique_X))
   rownames(p_YX_Tis0) = unique_Y
   colnames(p_YX_Tis0) = unique_X
   
@@ -140,9 +145,11 @@ APMI <- function(features,labels,treatment){
     p_Y_given_X_Tis0["1",toString(j)] = p_YXT[paste("1",toString(j),'0',sep=".")]/p_XT[paste(toString(j),'0',sep=".")]
     p_YX_Tis1["1",toString(j)] = p_Y_given_X_Tis1["1",toString(j)]*(p_XT[paste(toString(j),'1',sep=".")]/p_T['1'])
     p_YX_Tis0["1",toString(j)] = p_Y_given_X_Tis0["1",toString(j)]*(p_XT[paste(toString(j),'0',sep=".")]/p_T['0'])
-    ratio_outcome_1[toString(j)] = (p_YX_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"]))*log(p_Y_given_X_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"])) 
-    ratio_outcome_0[toString(j)] = (p_YX_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"]))*log(p_Y_given_X_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"])) 
-    test[toString(j)] = abs(p_Y_given_X_Tis1['1',toString(j)] - p_Y_given_X_Tis0['1',toString(j)] - (p_YT[paste('1','1',sep=".")]/p_T["1"] - p_YT[paste('1','0',sep=".")]/p_T["0"]))
+    #ratio_outcome_1[toString(j)] = (p_YX_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"]))*log(p_Y_given_X_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"])) 
+    #ratio_outcome_0[toString(j)] = (p_YX_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"]))*log(p_Y_given_X_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"])) 
+    ratio_outcome_1[toString(j)] = p_YX_Tis1['1',toString(j)]*log(p_Y_given_X_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"])) 
+    ratio_outcome_0[toString(j)] = p_YX_Tis0['1',toString(j)]*log(p_Y_given_X_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"])) 
+    test[toString(j)] = abs(p_Y_given_X_Tis1['1',toString(j)]-p_Y_given_X_Tis0['1',toString(j)] - (p_YT[paste('1','1',sep=".")]/p_T["1"] - p_YT[paste('1','0',sep=".")]/p_T["0"]))
   }
   
   use = T
@@ -186,6 +193,7 @@ PRED_PMI <- function(data,labels,treatment,top_k){
   ranking <- 	rep(0, num_features)
   selected_features <- 0   
   INFOdiff.First <-  PRED_PMIM(data,labels,treatment)
+  
   selected_features[1]<-INFOdiff.First$ranking[1]
   ranking_scores[selected_features[1]] <- 1
   mi_scores[selected_features[1]] <- INFOdiff.First$scores[INFOdiff.First$ranking[1]]
@@ -203,7 +211,7 @@ PRED_PMI <- function(data,labels,treatment,top_k){
   for (count in 2:top_k){
     S = length(selected_features)
     for (index_feature_ns in 1:length(not_selected_features)){
-      if (INFOdiff.First$use==T){
+      if (INFOdiff.First$use[not_selected_features[index_feature_ns]]==T){
         score_per_feature[not_selected_features[index_feature_ns]] = (1-S)*INFOdiff.First$scores[not_selected_features[index_feature_ns]]
       }
       else{
@@ -345,7 +353,6 @@ PRED_PMI.efficient <- function(data,labels,treatment, top_k){
   selected_features <- 0   
   
   INFOdiff.First <-  PRED_PMIM(data,labels,treatment)
-  
   selected_features[1]<-INFOdiff.First$ranking[1]
   ranking_scores[selected_features[1]] <- 1
   mi_scores[selected_features[1]] <- INFOdiff.First$scores[INFOdiff.First$ranking[1]]
@@ -364,7 +371,7 @@ PRED_PMI.efficient <- function(data,labels,treatment, top_k){
   for (count in 2:top_k){
     S = length(selected_features)
     for (index_feature_ns in 1:length(not_selected_features)){
-      if (INFOdiff.First$use==T & count > 2){
+      if (INFOdiff.First$use[index_feature_ns]==T & count > 2){
         score_per_feature[not_selected_features[index_feature_ns]] =  score_per_feature[not_selected_features[index_feature_ns]] - (3-count)*INFOdiff.First$scores[not_selected_features[index_feature_ns]] + (2-count)*INFOdiff.First$scores[not_selected_features[index_feature_ns]]
       }
       conditioning_features <- do.call(interaction,data[,c(not_selected_features[index_feature_ns], selected_features[count-1])])

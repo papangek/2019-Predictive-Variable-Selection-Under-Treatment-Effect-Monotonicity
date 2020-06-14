@@ -1,3 +1,7 @@
+#################################################
+# Example for running info theoretic approaches 
+#################################################
+
 setwd("your/working/directory")
 output_path = "your/output/folder"
 
@@ -20,9 +24,9 @@ for (i in 1:length(observations)){
   print(observations[i])
   dataset = Get.Data(observations[i],covariates,theta,2,m)
   K = length(dataset$predictive)
-  ranking_info_plus = matrix(, nrow = experiments, ncol = K)
-  ranking_pmi = matrix(, nrow = experiments, ncol = K)
-  ranking_jpmi = matrix(, nrow = experiments, ncol = K)
+  ranking_info_plus = matrix(data=NA, nrow = experiments, ncol = K)
+  ranking_pmi = matrix(data=NA, nrow = experiments, ncol = K)
+  ranking_jpmi = matrix(data=NA, nrow = experiments, ncol = K)
 
   for (exp in 1:experiments){
     print("Experiment...")
@@ -33,13 +37,13 @@ for (i in 1:length(observations)){
     dataset = Get.Data(observations[i],covariates,theta,bins,m)
     
     res <- INFOplus(dataset$data,dataset$labels,dataset$treatment,K)
-    ranking_info_plus[exp,] = res$ranking
+    ranking_info_plus[exp,] = res$ranking_scores
     
     res <- PRED_PMI(dataset$data,dataset$labels,dataset$treatment,K)
-    ranking_pmi[exp,] = res$ranking
+    ranking_pmi[exp,] = res$ranking_scores
     
     res <- PRED_JPMI(dataset$data,dataset$labels,dataset$treatment,K)
-    ranking_jpmi[exp,] = res$ranking
+    ranking_jpmi[exp,] = res$ranking_scores
     
   }
   
