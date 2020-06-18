@@ -145,8 +145,6 @@ APMI <- function(features,labels,treatment){
     p_Y_given_X_Tis0["1",toString(j)] = p_YXT[paste("1",toString(j),'0',sep=".")]/p_XT[paste(toString(j),'0',sep=".")]
     p_YX_Tis1["1",toString(j)] = p_Y_given_X_Tis1["1",toString(j)]*(p_XT[paste(toString(j),'1',sep=".")]/p_T['1'])
     p_YX_Tis0["1",toString(j)] = p_Y_given_X_Tis0["1",toString(j)]*(p_XT[paste(toString(j),'0',sep=".")]/p_T['0'])
-    #ratio_outcome_1[toString(j)] = (p_YX_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"]))*log(p_Y_given_X_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"])) 
-    #ratio_outcome_0[toString(j)] = (p_YX_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"]))*log(p_Y_given_X_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"])) 
     ratio_outcome_1[toString(j)] = p_YX_Tis1['1',toString(j)]*log(p_Y_given_X_Tis1['1',toString(j)]/(p_YT[paste('1','1',sep=".")]/p_T["1"])) 
     ratio_outcome_0[toString(j)] = p_YX_Tis0['1',toString(j)]*log(p_Y_given_X_Tis0['1',toString(j)]/(p_YT[paste('1','0',sep=".")]/p_T["0"])) 
     test[toString(j)] = abs(p_Y_given_X_Tis1['1',toString(j)]-p_Y_given_X_Tis0['1',toString(j)] - (p_YT[paste('1','1',sep=".")]/p_T["1"] - p_YT[paste('1','0',sep=".")]/p_T["0"]))
