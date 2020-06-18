@@ -79,18 +79,6 @@ Get.Data <- function(sample_size,num_features,bins,model){
     diag(sigma) = 1
     x = mvrnorm(sample_size, rep(0, num_features), sigma)
     for (index_feature in 1:num_features){ 
-      if (index_feature==4 | index_feature==1){
-        x[,index_feature] = 1*x[,index_feature]>0
-      }
-      else if (index_feature==5| index_feature==2){
-        x[,index_feature] = 1*x[,index_feature]>0
-      }
-      else if (index_feature==6| index_feature==3){
-        x[,index_feature] = 1*x[,index_feature]>0
-      }
-      else{
-        x[,index_feature] = 1*x[,index_feature]>0
-      }
       x[,index_feature] = 1*x[,index_feature]>0
     }
     
